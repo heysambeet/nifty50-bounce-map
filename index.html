@@ -1,0 +1,1743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nifty 50 Bounce Map</title>
+<style>
+:root {
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --hair:#e1e0d9; --ring:rgba(11,11,11,.10); --accent:#0e5a6d; --accent-ink:#0e5a6d;
+  --up:#006300; --down:#d03b3b; --up-bar:#0ca30c; --down-bar:#d03b3b;
+  --up-wash:rgba(12,163,12,.07); --down-wash:rgba(208,59,59,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --hair:#2c2c2a; --ring:rgba(255,255,255,.10); --accent:#59a8bd; --accent-ink:#59a8bd;
+    --up:#0ca30c; --down:#e66767; --up-bar:#0ca30c; --down-bar:#d03b3b;
+    --up-wash:rgba(12,163,12,.08); --down-wash:rgba(230,103,103,.07);
+  }
+}
+:root[data-theme="dark"] {
+  --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --hair:#2c2c2a; --ring:rgba(255,255,255,.10); --accent:#59a8bd; --accent-ink:#59a8bd;
+  --up:#0ca30c; --down:#e66767; --up-bar:#0ca30c; --down-bar:#d03b3b;
+  --up-wash:rgba(12,163,12,.08); --down-wash:rgba(230,103,103,.07);
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--page); color:var(--ink);
+  font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+.mono, .num, .hero, .chip .k { font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-variant-numeric:tabular-nums; }
+.wrap { max-width:1140px; margin:0 auto; padding:48px 24px 72px; }
+header { border-bottom:1px solid var(--hair); padding-bottom:28px; margin-bottom:36px; }
+.eyebrow { font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent-ink); font-weight:650; }
+h1 { font-size:clamp(28px,4.5vw,42px); line-height:1.08; letter-spacing:-.02em;
+  font-weight:750; margin:10px 0 12px; text-wrap:balance; }
+.lede { color:var(--ink-2); max-width:62ch; margin:0 0 18px; }
+.meta { display:flex; flex-wrap:wrap; gap:8px; }
+.meta span { font-size:12.5px; color:var(--ink-2); border:1px solid var(--hair);
+  border-radius:999px; padding:3px 11px; background:var(--surface); }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:16px; margin:0 0 14px; }
+.tile { background:var(--surface); border:1px solid var(--ring); border-radius:10px;
+  padding:20px 20px 14px; }
+.hero { font-size:40px; font-weight:700; letter-spacing:-.01em; margin-top:8px; line-height:1; }
+.hero .unit { font-size:20px; color:var(--muted); font-weight:500; margin-left:2px; }
+.tile-sub { color:var(--muted); font-size:12.5px; margin:6px 0 14px; }
+.tile-row { display:flex; justify-content:space-between; font-size:13.5px;
+  color:var(--ink-2); border-top:1px solid var(--hair); padding:7px 0; }
+.verdict { color:var(--ink-2); font-size:14.5px; max-width:75ch; margin:0 0 44px; }
+.verdict strong { color:var(--ink); }
+section { margin-bottom:52px; }
+.sec-head { display:flex; flex-wrap:wrap; gap:14px 24px; align-items:end;
+  justify-content:space-between; margin-bottom:16px; }
+h2 { font-size:23px; letter-spacing:-.015em; margin:0 0 4px; font-weight:700; }
+.def { color:var(--ink-2); font-size:14px; margin:0; max-width:52ch; }
+.sec-stats { display:flex; flex-wrap:wrap; gap:8px; }
+.chip { font-size:12.5px; color:var(--ink-2); background:var(--surface);
+  border:1px solid var(--hair); border-radius:999px; padding:4px 12px; white-space:nowrap; }
+.chip .k { font-weight:700; color:var(--ink); }
+.up-chip { background:var(--up-wash); } .down-chip { background:var(--down-wash); }
+.panels { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width: 940px) { .panels { grid-template-columns:1fr; } }
+.panel { background:var(--surface); border:1px solid var(--ring); border-radius:10px;
+  overflow:hidden; align-self:start; }
+.panel-h { font-size:13px; font-weight:650; padding:12px 16px;
+  border-bottom:1px solid var(--hair); letter-spacing:.02em; }
+.rose .panel-h { background:var(--up-wash); }
+.fell .panel-h { background:var(--down-wash); }
+.scroll { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th { text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--hair);
+  white-space:nowrap; }
+td { padding:6px 10px; border-bottom:1px solid var(--hair); white-space:nowrap; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--page); }
+th.num, td.num { text-align:right; }
+.sym { font-weight:600; }
+.d.up { color:var(--up); } .d.down { color:var(--down); } .d.flat { color:var(--muted); }
+td.bar { width:86px; min-width:64px; }
+.track { height:8px; border-radius:4px; background:var(--hair); overflow:hidden;
+  display:flex; }
+.track i { display:block; height:100%; border-radius:4px; }
+.track i.pos { background:var(--up-bar); }
+.track i.neg { background:var(--down-bar); margin-left:auto; }
+.notes { background:var(--surface); border:1px solid var(--ring); border-radius:10px;
+  padding:20px 24px; color:var(--ink-2); font-size:14px; }
+.notes h2 { font-size:16px; margin-bottom:10px; }
+.notes ul { margin:0; padding-left:18px; }
+.notes li { margin-bottom:7px; }
+.notes li:last-child { margin-bottom:0; }
+footer { margin-top:28px; color:var(--muted); font-size:12.5px; }
+a { color:var(--accent-ink); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Nifty 50 · Event study · Aug 2016 – Aug 2026</div>
+  <h1>What happens after a stock hits support?</h1>
+  <p class="lede">Every time a Nifty 50 stock made a new 52-week low or touched its
+  200-day / 50-day moving average from above in the last decade, we measured the move
+  over the next 1 and 2 trading days — then segregated the index into stocks that
+  tend to bounce and stocks that keep falling.</p>
+  <div class="meta">
+    <span>50 stocks</span><span>6,961 events</span>
+    <span>close-to-close returns</span><span>5-session event cooldown</span>
+    <span>data: Yahoo Finance, split/bonus-adjusted</span>
+  </div>
+</header>
+
+<div class="tiles">
+<div class="tile">
+<div class="eyebrow">Touch 200 DMA</div>
+<div class="hero d up">+0.13<span class="unit">%</span></div>
+<div class="tile-sub">avg move, next 2 days</div>
+<div class="tile-row"><span>next 1 day</span><span class="mono d up">+0.09%</span></div>
+<div class="tile-row"><span>closed higher (2d)</span><span class="mono">53.4%</span></div>
+<div class="tile-row"><span>events</span><span class="mono">1,967</span></div>
+</div>
+<div class="tile">
+<div class="eyebrow">Touch 50 DMA</div>
+<div class="hero d up">+0.13<span class="unit">%</span></div>
+<div class="tile-sub">avg move, next 2 days</div>
+<div class="tile-row"><span>next 1 day</span><span class="mono d up">+0.06%</span></div>
+<div class="tile-row"><span>closed higher (2d)</span><span class="mono">51.4%</span></div>
+<div class="tile-row"><span>events</span><span class="mono">4,497</span></div>
+</div>
+<div class="tile">
+<div class="eyebrow">New 52-week low</div>
+<div class="hero d down">-0.29<span class="unit">%</span></div>
+<div class="tile-sub">avg move, next 2 days</div>
+<div class="tile-row"><span>next 1 day</span><span class="mono d up">+0.11%</span></div>
+<div class="tile-row"><span>closed higher (2d)</span><span class="mono">50.9%</span></div>
+<div class="tile-row"><span>events</span><span class="mono">497</span></div>
+</div>
+</div>
+<p class="verdict"><strong>The verdict:</strong> moving-average touches produce a mild,
+broad bounce — the 200&nbsp;DMA is the most reliable, with 31 of 50 stocks positive.
+A 52-week low is the opposite: a small pop the next day that turns
+<strong>negative by day 2</strong> — only 20 of 50 stocks bounce, and the losers lose big.</p>
+
+
+<section id="52w_low">
+<div class="sec-head">
+  <div>
+    <h2>New 52-week low</h2>
+    <p class="def">The day's low makes a new 252-session low. The classic falling knife.</p>
+  </div>
+  <div class="sec-stats">
+    <div class="chip"><span class="k">497</span> events</div>
+    <div class="chip up-chip"><span class="k">20</span> rose</div>
+    <div class="chip down-chip"><span class="k">30</span> fell</div>
+    <div class="chip"><span class="k d down">-0.29%</span> pooled avg +2d</div>
+  </div>
+</div>
+<div class="panels">
+<div class="panel rose">
+<div class="panel-h">Rose over the next 2 days · 20 stocks</div>
+<div class="scroll"><table><tr><th>Stock</th><th class="num">Events</th><th class="num">Avg +1d</th>
+<th class="num">Avg +2d</th><th class="bar"></th><th class="num">Up % (1d)</th>
+<th class="num">Up % (2d)</th><th class="num">Worst 2d</th></tr><tr>
+<td class="sym">ETERNAL</td>
+<td class="num">1</td>
+<td class="num d up">+3.98%</td>
+<td class="num d up">+6.48%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:100.0%"></i></div></td>
+<td class="num">100%</td>
+<td class="num">100%</td>
+<td class="num d down">+6.48%</td>
+</tr>
+<tr>
+<td class="sym">ADANIPORTS</td>
+<td class="num">7</td>
+<td class="num d up">+2.93%</td>
+<td class="num d up">+3.07%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:47.4%"></i></div></td>
+<td class="num">71%</td>
+<td class="num">57%</td>
+<td class="num d down">-8.12%</td>
+</tr>
+<tr>
+<td class="sym">HDFCLIFE</td>
+<td class="num">14</td>
+<td class="num d up">+1.54%</td>
+<td class="num d up">+2.77%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:42.7%"></i></div></td>
+<td class="num">57%</td>
+<td class="num">64%</td>
+<td class="num d down">-2.16%</td>
+</tr>
+<tr>
+<td class="sym">SUNPHARMA</td>
+<td class="num">6</td>
+<td class="num d up">+2.36%</td>
+<td class="num d up">+2.74%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:42.3%"></i></div></td>
+<td class="num">83%</td>
+<td class="num">67%</td>
+<td class="num d down">-3.66%</td>
+</tr>
+<tr>
+<td class="sym">MARUTI</td>
+<td class="num">10</td>
+<td class="num d up">+0.45%</td>
+<td class="num d up">+1.95%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:30.1%"></i></div></td>
+<td class="num">30%</td>
+<td class="num">50%</td>
+<td class="num d down">-6.52%</td>
+</tr>
+<tr>
+<td class="sym">TRENT</td>
+<td class="num">11</td>
+<td class="num d up">+0.76%</td>
+<td class="num d up">+1.73%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:26.7%"></i></div></td>
+<td class="num">82%</td>
+<td class="num">73%</td>
+<td class="num d down">-1.68%</td>
+</tr>
+<tr>
+<td class="sym">BAJAJFINSV</td>
+<td class="num">7</td>
+<td class="num d down">-1.38%</td>
+<td class="num d up">+1.73%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:26.7%"></i></div></td>
+<td class="num">43%</td>
+<td class="num">71%</td>
+<td class="num d down">-1.33%</td>
+</tr>
+<tr>
+<td class="sym">TITAN</td>
+<td class="num">5</td>
+<td class="num d down">-0.15%</td>
+<td class="num d up">+1.64%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:25.3%"></i></div></td>
+<td class="num">60%</td>
+<td class="num">60%</td>
+<td class="num d down">-7.69%</td>
+</tr>
+<tr>
+<td class="sym">NESTLEIND</td>
+<td class="num">7</td>
+<td class="num d up">+0.85%</td>
+<td class="num d up">+1.61%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:24.8%"></i></div></td>
+<td class="num">86%</td>
+<td class="num">71%</td>
+<td class="num d down">-0.66%</td>
+</tr>
+<tr>
+<td class="sym">BHARTIARTL</td>
+<td class="num">6</td>
+<td class="num d up">+0.52%</td>
+<td class="num d up">+1.30%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:20.1%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">50%</td>
+<td class="num d down">-5.08%</td>
+</tr>
+<tr>
+<td class="sym">ASIANPAINT</td>
+<td class="num">11</td>
+<td class="num d up">+0.73%</td>
+<td class="num d up">+1.08%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:16.7%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">64%</td>
+<td class="num d down">-2.86%</td>
+</tr>
+<tr>
+<td class="sym">TATACONSUM</td>
+<td class="num">4</td>
+<td class="num d down">-0.32%</td>
+<td class="num d up">+0.98%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:15.1%"></i></div></td>
+<td class="num">75%</td>
+<td class="num">75%</td>
+<td class="num d down">-1.79%</td>
+</tr>
+<tr>
+<td class="sym">ICICIBANK</td>
+<td class="num">3</td>
+<td class="num d down">-0.34%</td>
+<td class="num d up">+0.95%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:14.7%"></i></div></td>
+<td class="num">67%</td>
+<td class="num">67%</td>
+<td class="num d down">-2.63%</td>
+</tr>
+<tr>
+<td class="sym">DRREDDY</td>
+<td class="num">7</td>
+<td class="num d up">+0.57%</td>
+<td class="num d up">+0.93%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:14.4%"></i></div></td>
+<td class="num">57%</td>
+<td class="num">57%</td>
+<td class="num d down">-1.33%</td>
+</tr>
+<tr>
+<td class="sym">COALINDIA</td>
+<td class="num">14</td>
+<td class="num d up">+0.93%</td>
+<td class="num d up">+0.77%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:11.9%"></i></div></td>
+<td class="num">79%</td>
+<td class="num">57%</td>
+<td class="num d down">-5.27%</td>
+</tr>
+<tr>
+<td class="sym">TATASTEEL</td>
+<td class="num">17</td>
+<td class="num d up">+0.61%</td>
+<td class="num d up">+0.51%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:7.9%"></i></div></td>
+<td class="num">59%</td>
+<td class="num">71%</td>
+<td class="num d down">-10.81%</td>
+</tr>
+<tr>
+<td class="sym">SBIN</td>
+<td class="num">8</td>
+<td class="num d down">-1.61%</td>
+<td class="num d up">+0.26%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.0%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">50%</td>
+<td class="num d down">-2.34%</td>
+</tr>
+<tr>
+<td class="sym">HEROMOTOCO</td>
+<td class="num">22</td>
+<td class="num d up">+0.52%</td>
+<td class="num d up">+0.23%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.5%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">50%</td>
+<td class="num d down">-3.43%</td>
+</tr>
+<tr>
+<td class="sym">APOLLOHOSP</td>
+<td class="num">8</td>
+<td class="num d up">+0.89%</td>
+<td class="num d up">+0.14%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.2%"></i></div></td>
+<td class="num">38%</td>
+<td class="num">38%</td>
+<td class="num d down">-2.30%</td>
+</tr>
+<tr>
+<td class="sym">NTPC</td>
+<td class="num">10</td>
+<td class="num d up">+0.79%</td>
+<td class="num d up">+0.04%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:0.6%"></i></div></td>
+<td class="num">60%</td>
+<td class="num">60%</td>
+<td class="num d down">-8.31%</td>
+</tr></table></div>
+</div>
+<div class="panel fell">
+<div class="panel-h">Fell over the next 2 days · 30 stocks</div>
+<div class="scroll"><table><tr><th>Stock</th><th class="num">Events</th><th class="num">Avg +1d</th>
+<th class="num">Avg +2d</th><th class="bar"></th><th class="num">Up % (1d)</th>
+<th class="num">Up % (2d)</th><th class="num">Worst 2d</th></tr><tr>
+<td class="sym">HINDALCO</td>
+<td class="num">8</td>
+<td class="num d down">-1.17%</td>
+<td class="num d down">-5.36%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:82.7%"></i></div></td>
+<td class="num">25%</td>
+<td class="num">12%</td>
+<td class="num d down">-11.88%</td>
+</tr>
+<tr>
+<td class="sym">SBILIFE</td>
+<td class="num">2</td>
+<td class="num d up">+1.74%</td>
+<td class="num d down">-4.46%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:68.8%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">50%</td>
+<td class="num d down">-11.27%</td>
+</tr>
+<tr>
+<td class="sym">LT</td>
+<td class="num">5</td>
+<td class="num d down">-0.10%</td>
+<td class="num d down">-3.44%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:53.1%"></i></div></td>
+<td class="num">60%</td>
+<td class="num">20%</td>
+<td class="num d down">-14.12%</td>
+</tr>
+<tr>
+<td class="sym">BAJFINANCE</td>
+<td class="num">6</td>
+<td class="num d up">+0.57%</td>
+<td class="num d down">-3.18%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:49.1%"></i></div></td>
+<td class="num">67%</td>
+<td class="num">50%</td>
+<td class="num d down">-17.48%</td>
+</tr>
+<tr>
+<td class="sym">SHRIRAMFIN</td>
+<td class="num">5</td>
+<td class="num d up">+0.12%</td>
+<td class="num d down">-2.53%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:39.0%"></i></div></td>
+<td class="num">60%</td>
+<td class="num">60%</td>
+<td class="num d down">-27.40%</td>
+</tr>
+<tr>
+<td class="sym">ADANIENT</td>
+<td class="num">4</td>
+<td class="num d up">+1.14%</td>
+<td class="num d down">-2.09%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:32.3%"></i></div></td>
+<td class="num">75%</td>
+<td class="num">50%</td>
+<td class="num d down">-8.27%</td>
+</tr>
+<tr>
+<td class="sym">HCLTECH</td>
+<td class="num">9</td>
+<td class="num d up">+0.49%</td>
+<td class="num d down">-2.07%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:31.9%"></i></div></td>
+<td class="num">33%</td>
+<td class="num">44%</td>
+<td class="num d down">-8.64%</td>
+</tr>
+<tr>
+<td class="sym">HDFCBANK</td>
+<td class="num">9</td>
+<td class="num d up">+0.80%</td>
+<td class="num d down">-1.89%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:29.2%"></i></div></td>
+<td class="num">67%</td>
+<td class="num">44%</td>
+<td class="num d down">-13.85%</td>
+</tr>
+<tr>
+<td class="sym">INDUSINDBK</td>
+<td class="num">20</td>
+<td class="num d down">-1.71%</td>
+<td class="num d down">-1.74%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:26.9%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">50%</td>
+<td class="num d down">-23.96%</td>
+</tr>
+<tr>
+<td class="sym">ONGC</td>
+<td class="num">11</td>
+<td class="num d down">-1.53%</td>
+<td class="num d down">-1.70%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:26.2%"></i></div></td>
+<td class="num">45%</td>
+<td class="num">55%</td>
+<td class="num d down">-18.98%</td>
+</tr>
+<tr>
+<td class="sym">EICHERMOT</td>
+<td class="num">11</td>
+<td class="num d down">-0.59%</td>
+<td class="num d down">-1.59%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:24.5%"></i></div></td>
+<td class="num">36%</td>
+<td class="num">45%</td>
+<td class="num d down">-11.48%</td>
+</tr>
+<tr>
+<td class="sym">RELIANCE</td>
+<td class="num">8</td>
+<td class="num d up">+1.69%</td>
+<td class="num d down">-1.44%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:22.2%"></i></div></td>
+<td class="num">62%</td>
+<td class="num">25%</td>
+<td class="num d down">-4.59%</td>
+</tr>
+<tr>
+<td class="sym">ULTRACEMCO</td>
+<td class="num">11</td>
+<td class="num d up">+0.59%</td>
+<td class="num d down">-1.20%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:18.5%"></i></div></td>
+<td class="num">45%</td>
+<td class="num">18%</td>
+<td class="num d down">-7.37%</td>
+</tr>
+<tr>
+<td class="sym">KOTAKBANK</td>
+<td class="num">6</td>
+<td class="num d down">-0.80%</td>
+<td class="num d down">-1.19%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:18.4%"></i></div></td>
+<td class="num">33%</td>
+<td class="num">33%</td>
+<td class="num d down">-10.02%</td>
+</tr>
+<tr>
+<td class="sym">M&amp;M</td>
+<td class="num">11</td>
+<td class="num d down">-0.63%</td>
+<td class="num d down">-1.18%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:18.2%"></i></div></td>
+<td class="num">45%</td>
+<td class="num">36%</td>
+<td class="num d down">-9.14%</td>
+</tr>
+<tr>
+<td class="sym">INFY</td>
+<td class="num">11</td>
+<td class="num d down">-0.51%</td>
+<td class="num d down">-1.11%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:17.1%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">45%</td>
+<td class="num d down">-13.61%</td>
+</tr>
+<tr>
+<td class="sym">AXISBANK</td>
+<td class="num">7</td>
+<td class="num d down">-0.96%</td>
+<td class="num d down">-1.08%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:16.7%"></i></div></td>
+<td class="num">29%</td>
+<td class="num">57%</td>
+<td class="num d down">-12.88%</td>
+</tr>
+<tr>
+<td class="sym">JSWSTEEL</td>
+<td class="num">11</td>
+<td class="num d up">+2.03%</td>
+<td class="num d down">-1.04%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:16.0%"></i></div></td>
+<td class="num">45%</td>
+<td class="num">45%</td>
+<td class="num d down">-11.57%</td>
+</tr>
+<tr>
+<td class="sym">BAJAJ-AUTO</td>
+<td class="num">8</td>
+<td class="num d up">+0.73%</td>
+<td class="num d down">-0.96%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:14.8%"></i></div></td>
+<td class="num">75%</td>
+<td class="num">62%</td>
+<td class="num d down">-10.66%</td>
+</tr>
+<tr>
+<td class="sym">WIPRO</td>
+<td class="num">20</td>
+<td class="num d down">-0.64%</td>
+<td class="num d down">-0.90%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:13.9%"></i></div></td>
+<td class="num">35%</td>
+<td class="num">35%</td>
+<td class="num d down">-7.14%</td>
+</tr>
+<tr>
+<td class="sym">BEL</td>
+<td class="num">14</td>
+<td class="num d up">+0.08%</td>
+<td class="num d down">-0.70%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:10.8%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">43%</td>
+<td class="num d down">-4.93%</td>
+</tr>
+<tr>
+<td class="sym">ITC</td>
+<td class="num">17</td>
+<td class="num d up">+0.37%</td>
+<td class="num d down">-0.63%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:9.7%"></i></div></td>
+<td class="num">65%</td>
+<td class="num">35%</td>
+<td class="num d down">-5.49%</td>
+</tr>
+<tr>
+<td class="sym">TATAMOTORS</td>
+<td class="num">37</td>
+<td class="num d down">-0.10%</td>
+<td class="num d down">-0.31%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:4.8%"></i></div></td>
+<td class="num">54%</td>
+<td class="num">54%</td>
+<td class="num d down">-16.75%</td>
+</tr>
+<tr>
+<td class="sym">GRASIM</td>
+<td class="num">15</td>
+<td class="num d down">-0.80%</td>
+<td class="num d down">-0.26%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:4.0%"></i></div></td>
+<td class="num">33%</td>
+<td class="num">53%</td>
+<td class="num d down">-11.78%</td>
+</tr>
+<tr>
+<td class="sym">JIOFIN</td>
+<td class="num">3</td>
+<td class="num d down">-1.00%</td>
+<td class="num d down">-0.26%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:4.0%"></i></div></td>
+<td class="num">67%</td>
+<td class="num">33%</td>
+<td class="num d down">-2.34%</td>
+</tr>
+<tr>
+<td class="sym">HINDUNILVR</td>
+<td class="num">8</td>
+<td class="num d down">-0.11%</td>
+<td class="num d down">-0.24%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:3.7%"></i></div></td>
+<td class="num">75%</td>
+<td class="num">62%</td>
+<td class="num d down">-7.03%</td>
+</tr>
+<tr>
+<td class="sym">TECHM</td>
+<td class="num">3</td>
+<td class="num d down">-1.91%</td>
+<td class="num d down">-0.23%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:3.5%"></i></div></td>
+<td class="num">33%</td>
+<td class="num">67%</td>
+<td class="num d down">-9.22%</td>
+</tr>
+<tr>
+<td class="sym">POWERGRID</td>
+<td class="num">5</td>
+<td class="num d down">-0.22%</td>
+<td class="num d down">-0.19%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:2.9%"></i></div></td>
+<td class="num">60%</td>
+<td class="num">40%</td>
+<td class="num d down">-2.20%</td>
+</tr>
+<tr>
+<td class="sym">CIPLA</td>
+<td class="num">16</td>
+<td class="num d down">-0.52%</td>
+<td class="num d down">-0.05%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:0.8%"></i></div></td>
+<td class="num">56%</td>
+<td class="num">62%</td>
+<td class="num d down">-5.59%</td>
+</tr>
+<tr>
+<td class="sym">TCS</td>
+<td class="num">18</td>
+<td class="num d down">-0.24%</td>
+<td class="num d down">-0.02%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:0.3%"></i></div></td>
+<td class="num">44%</td>
+<td class="num">56%</td>
+<td class="num d down">-4.15%</td>
+</tr></table></div>
+</div>
+</div>
+</section>
+<section id="200dma">
+<div class="sec-head">
+  <div>
+    <h2>Touch of the 200 DMA</h2>
+    <p class="def">Previous close above the 200-day average; today's low touches it from above.</p>
+  </div>
+  <div class="sec-stats">
+    <div class="chip"><span class="k">1,967</span> events</div>
+    <div class="chip up-chip"><span class="k">31</span> rose</div>
+    <div class="chip down-chip"><span class="k">19</span> fell</div>
+    <div class="chip"><span class="k d up">+0.13%</span> pooled avg +2d</div>
+  </div>
+</div>
+<div class="panels">
+<div class="panel rose">
+<div class="panel-h">Rose over the next 2 days · 31 stocks</div>
+<div class="scroll"><table><tr><th>Stock</th><th class="num">Events</th><th class="num">Avg +1d</th>
+<th class="num">Avg +2d</th><th class="bar"></th><th class="num">Up % (1d)</th>
+<th class="num">Up % (2d)</th><th class="num">Worst 2d</th></tr><tr>
+<td class="sym">BHARTIARTL</td>
+<td class="num">27</td>
+<td class="num d up">+0.43%</td>
+<td class="num d up">+1.30%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:20.1%"></i></div></td>
+<td class="num">67%</td>
+<td class="num">74%</td>
+<td class="num d down">-3.43%</td>
+</tr>
+<tr>
+<td class="sym">ADANIENT</td>
+<td class="num">39</td>
+<td class="num d up">+0.60%</td>
+<td class="num d up">+0.92%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:14.2%"></i></div></td>
+<td class="num">51%</td>
+<td class="num">49%</td>
+<td class="num d down">-16.93%</td>
+</tr>
+<tr>
+<td class="sym">COALINDIA</td>
+<td class="num">27</td>
+<td class="num d up">+0.22%</td>
+<td class="num d up">+0.76%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:11.7%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">67%</td>
+<td class="num d down">-5.08%</td>
+</tr>
+<tr>
+<td class="sym">TCS</td>
+<td class="num">51</td>
+<td class="num d up">+0.29%</td>
+<td class="num d up">+0.68%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:10.5%"></i></div></td>
+<td class="num">61%</td>
+<td class="num">76%</td>
+<td class="num d down">-7.69%</td>
+</tr>
+<tr>
+<td class="sym">BEL</td>
+<td class="num">29</td>
+<td class="num d up">+0.17%</td>
+<td class="num d up">+0.67%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:10.3%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">52%</td>
+<td class="num d down">-10.33%</td>
+</tr>
+<tr>
+<td class="sym">SUNPHARMA</td>
+<td class="num">33</td>
+<td class="num d up">+0.40%</td>
+<td class="num d up">+0.65%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:10.0%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">67%</td>
+<td class="num d down">-8.30%</td>
+</tr>
+<tr>
+<td class="sym">BAJAJ-AUTO</td>
+<td class="num">43</td>
+<td class="num d up">+0.53%</td>
+<td class="num d up">+0.59%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:9.1%"></i></div></td>
+<td class="num">72%</td>
+<td class="num">58%</td>
+<td class="num d down">-6.72%</td>
+</tr>
+<tr>
+<td class="sym">SBIN</td>
+<td class="num">49</td>
+<td class="num d down">-0.10%</td>
+<td class="num d up">+0.54%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:8.3%"></i></div></td>
+<td class="num">59%</td>
+<td class="num">59%</td>
+<td class="num d down">-6.86%</td>
+</tr>
+<tr>
+<td class="sym">ADANIPORTS</td>
+<td class="num">51</td>
+<td class="num d up">+0.38%</td>
+<td class="num d up">+0.53%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:8.2%"></i></div></td>
+<td class="num">49%</td>
+<td class="num">61%</td>
+<td class="num d down">-5.58%</td>
+</tr>
+<tr>
+<td class="sym">JSWSTEEL</td>
+<td class="num">35</td>
+<td class="num d up">+0.34%</td>
+<td class="num d up">+0.52%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:8.0%"></i></div></td>
+<td class="num">51%</td>
+<td class="num">69%</td>
+<td class="num d down">-6.78%</td>
+</tr>
+<tr>
+<td class="sym">NTPC</td>
+<td class="num">33</td>
+<td class="num d up">+0.45%</td>
+<td class="num d up">+0.51%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:7.9%"></i></div></td>
+<td class="num">61%</td>
+<td class="num">55%</td>
+<td class="num d down">-2.88%</td>
+</tr>
+<tr>
+<td class="sym">AXISBANK</td>
+<td class="num">53</td>
+<td class="num d up">+0.35%</td>
+<td class="num d up">+0.45%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:6.9%"></i></div></td>
+<td class="num">53%</td>
+<td class="num">58%</td>
+<td class="num d down">-5.07%</td>
+</tr>
+<tr>
+<td class="sym">NESTLEIND</td>
+<td class="num">45</td>
+<td class="num d up">+0.30%</td>
+<td class="num d up">+0.45%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:6.9%"></i></div></td>
+<td class="num">56%</td>
+<td class="num">56%</td>
+<td class="num d down">-5.98%</td>
+</tr>
+<tr>
+<td class="sym">MARUTI</td>
+<td class="num">38</td>
+<td class="num d up">+0.03%</td>
+<td class="num d up">+0.33%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:5.1%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">61%</td>
+<td class="num d down">-6.08%</td>
+</tr>
+<tr>
+<td class="sym">WIPRO</td>
+<td class="num">21</td>
+<td class="num d up">+0.34%</td>
+<td class="num d up">+0.31%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.8%"></i></div></td>
+<td class="num">52%</td>
+<td class="num">52%</td>
+<td class="num d down">-7.00%</td>
+</tr>
+<tr>
+<td class="sym">HCLTECH</td>
+<td class="num">43</td>
+<td class="num d up">+0.08%</td>
+<td class="num d up">+0.30%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.6%"></i></div></td>
+<td class="num">47%</td>
+<td class="num">51%</td>
+<td class="num d down">-8.72%</td>
+</tr>
+<tr>
+<td class="sym">KOTAKBANK</td>
+<td class="num">68</td>
+<td class="num d up">+0.41%</td>
+<td class="num d up">+0.29%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.5%"></i></div></td>
+<td class="num">59%</td>
+<td class="num">53%</td>
+<td class="num d down">-7.17%</td>
+</tr>
+<tr>
+<td class="sym">ICICIBANK</td>
+<td class="num">44</td>
+<td class="num d up">+0.48%</td>
+<td class="num d up">+0.27%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.2%"></i></div></td>
+<td class="num">52%</td>
+<td class="num">48%</td>
+<td class="num d down">-7.01%</td>
+</tr>
+<tr>
+<td class="sym">ITC</td>
+<td class="num">32</td>
+<td class="num d up">+0.15%</td>
+<td class="num d up">+0.27%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.2%"></i></div></td>
+<td class="num">53%</td>
+<td class="num">56%</td>
+<td class="num d down">-3.09%</td>
+</tr>
+<tr>
+<td class="sym">DRREDDY</td>
+<td class="num">55</td>
+<td class="num d up">+0.05%</td>
+<td class="num d up">+0.26%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.0%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">56%</td>
+<td class="num d down">-7.12%</td>
+</tr>
+<tr>
+<td class="sym">TATAMOTORS</td>
+<td class="num">29</td>
+<td class="num d up">+0.08%</td>
+<td class="num d up">+0.25%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.9%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">52%</td>
+<td class="num d down">-8.83%</td>
+</tr>
+<tr>
+<td class="sym">BAJFINANCE</td>
+<td class="num">47</td>
+<td class="num d up">+0.49%</td>
+<td class="num d up">+0.23%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.5%"></i></div></td>
+<td class="num">57%</td>
+<td class="num">53%</td>
+<td class="num d down">-5.47%</td>
+</tr>
+<tr>
+<td class="sym">TATASTEEL</td>
+<td class="num">44</td>
+<td class="num d down">-0.15%</td>
+<td class="num d up">+0.23%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.5%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">57%</td>
+<td class="num d down">-8.09%</td>
+</tr>
+<tr>
+<td class="sym">BAJAJFINSV</td>
+<td class="num">50</td>
+<td class="num d up">+0.04%</td>
+<td class="num d up">+0.20%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.1%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">54%</td>
+<td class="num d down">-6.55%</td>
+</tr>
+<tr>
+<td class="sym">TRENT</td>
+<td class="num">36</td>
+<td class="num d up">+0.22%</td>
+<td class="num d up">+0.20%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.1%"></i></div></td>
+<td class="num">47%</td>
+<td class="num">44%</td>
+<td class="num d down">-7.72%</td>
+</tr>
+<tr>
+<td class="sym">HINDUNILVR</td>
+<td class="num">47</td>
+<td class="num d up">+0.14%</td>
+<td class="num d up">+0.10%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.5%"></i></div></td>
+<td class="num">47%</td>
+<td class="num">51%</td>
+<td class="num d down">-6.77%</td>
+</tr>
+<tr>
+<td class="sym">CIPLA</td>
+<td class="num">62</td>
+<td class="num d up">+0.28%</td>
+<td class="num d up">+0.09%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.4%"></i></div></td>
+<td class="num">58%</td>
+<td class="num">55%</td>
+<td class="num d down">-5.28%</td>
+</tr>
+<tr>
+<td class="sym">RELIANCE</td>
+<td class="num">39</td>
+<td class="num d down">-0.02%</td>
+<td class="num d up">+0.08%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.2%"></i></div></td>
+<td class="num">51%</td>
+<td class="num">49%</td>
+<td class="num d down">-6.64%</td>
+</tr>
+<tr>
+<td class="sym">TITAN</td>
+<td class="num">42</td>
+<td class="num d up">+0.04%</td>
+<td class="num d up">+0.08%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.2%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">57%</td>
+<td class="num d down">-10.53%</td>
+</tr>
+<tr>
+<td class="sym">EICHERMOT</td>
+<td class="num">52</td>
+<td class="num d down">-0.09%</td>
+<td class="num d up">+0.07%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.1%"></i></div></td>
+<td class="num">46%</td>
+<td class="num">46%</td>
+<td class="num d down">-4.66%</td>
+</tr>
+<tr>
+<td class="sym">LT</td>
+<td class="num">32</td>
+<td class="num d up">+0.11%</td>
+<td class="num d up">+0.06%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:0.9%"></i></div></td>
+<td class="num">56%</td>
+<td class="num">44%</td>
+<td class="num d down">-6.72%</td>
+</tr></table></div>
+</div>
+<div class="panel fell">
+<div class="panel-h">Fell over the next 2 days · 19 stocks</div>
+<div class="scroll"><table><tr><th>Stock</th><th class="num">Events</th><th class="num">Avg +1d</th>
+<th class="num">Avg +2d</th><th class="bar"></th><th class="num">Up % (1d)</th>
+<th class="num">Up % (2d)</th><th class="num">Worst 2d</th></tr><tr>
+<td class="sym">HDFCBANK</td>
+<td class="num">38</td>
+<td class="num d down">-0.15%</td>
+<td class="num d down">-0.63%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:9.7%"></i></div></td>
+<td class="num">47%</td>
+<td class="num">39%</td>
+<td class="num d down">-6.04%</td>
+</tr>
+<tr>
+<td class="sym">JIOFIN</td>
+<td class="num">8</td>
+<td class="num d up">+0.35%</td>
+<td class="num d down">-0.63%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:9.7%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">38%</td>
+<td class="num d down">-4.93%</td>
+</tr>
+<tr>
+<td class="sym">ASIANPAINT</td>
+<td class="num">59</td>
+<td class="num d down">-0.61%</td>
+<td class="num d down">-0.55%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:8.5%"></i></div></td>
+<td class="num">37%</td>
+<td class="num">47%</td>
+<td class="num d down">-9.60%</td>
+</tr>
+<tr>
+<td class="sym">ONGC</td>
+<td class="num">21</td>
+<td class="num d down">-0.41%</td>
+<td class="num d down">-0.55%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:8.5%"></i></div></td>
+<td class="num">43%</td>
+<td class="num">43%</td>
+<td class="num d down">-6.57%</td>
+</tr>
+<tr>
+<td class="sym">INFY</td>
+<td class="num">30</td>
+<td class="num d down">-0.30%</td>
+<td class="num d down">-0.53%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:8.2%"></i></div></td>
+<td class="num">47%</td>
+<td class="num">53%</td>
+<td class="num d down">-7.17%</td>
+</tr>
+<tr>
+<td class="sym">HDFCLIFE</td>
+<td class="num">31</td>
+<td class="num d down">-0.16%</td>
+<td class="num d down">-0.48%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:7.4%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">39%</td>
+<td class="num d down">-6.31%</td>
+</tr>
+<tr>
+<td class="sym">M&amp;M</td>
+<td class="num">23</td>
+<td class="num d up">+0.23%</td>
+<td class="num d down">-0.47%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:7.3%"></i></div></td>
+<td class="num">57%</td>
+<td class="num">57%</td>
+<td class="num d down">-8.92%</td>
+</tr>
+<tr>
+<td class="sym">HINDALCO</td>
+<td class="num">35</td>
+<td class="num d up">+0.30%</td>
+<td class="num d down">-0.46%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:7.1%"></i></div></td>
+<td class="num">63%</td>
+<td class="num">43%</td>
+<td class="num d down">-9.26%</td>
+</tr>
+<tr>
+<td class="sym">HEROMOTOCO</td>
+<td class="num">37</td>
+<td class="num d down">-0.20%</td>
+<td class="num d down">-0.38%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:5.9%"></i></div></td>
+<td class="num">46%</td>
+<td class="num">46%</td>
+<td class="num d down">-4.50%</td>
+</tr>
+<tr>
+<td class="sym">ULTRACEMCO</td>
+<td class="num">56</td>
+<td class="num d up">+0.05%</td>
+<td class="num d down">-0.33%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:5.1%"></i></div></td>
+<td class="num">52%</td>
+<td class="num">45%</td>
+<td class="num d down">-6.66%</td>
+</tr>
+<tr>
+<td class="sym">INDUSINDBK</td>
+<td class="num">30</td>
+<td class="num d up">+0.34%</td>
+<td class="num d down">-0.28%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:4.3%"></i></div></td>
+<td class="num">60%</td>
+<td class="num">47%</td>
+<td class="num d down">-6.43%</td>
+</tr>
+<tr>
+<td class="sym">ETERNAL</td>
+<td class="num">10</td>
+<td class="num d down">-1.27%</td>
+<td class="num d down">-0.27%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:4.2%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">50%</td>
+<td class="num d down">-9.72%</td>
+</tr>
+<tr>
+<td class="sym">POWERGRID</td>
+<td class="num">58</td>
+<td class="num d down">-0.01%</td>
+<td class="num d down">-0.27%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:4.2%"></i></div></td>
+<td class="num">53%</td>
+<td class="num">55%</td>
+<td class="num d down">-7.66%</td>
+</tr>
+<tr>
+<td class="sym">SBILIFE</td>
+<td class="num">34</td>
+<td class="num d down">-0.03%</td>
+<td class="num d down">-0.19%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:2.9%"></i></div></td>
+<td class="num">44%</td>
+<td class="num">47%</td>
+<td class="num d down">-5.27%</td>
+</tr>
+<tr>
+<td class="sym">SHRIRAMFIN</td>
+<td class="num">56</td>
+<td class="num d down">-0.65%</td>
+<td class="num d down">-0.14%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:2.2%"></i></div></td>
+<td class="num">43%</td>
+<td class="num">52%</td>
+<td class="num d down">-10.60%</td>
+</tr>
+<tr>
+<td class="sym">TECHM</td>
+<td class="num">33</td>
+<td class="num d down">-0.15%</td>
+<td class="num d down">-0.14%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:2.2%"></i></div></td>
+<td class="num">42%</td>
+<td class="num">55%</td>
+<td class="num d down">-7.80%</td>
+</tr>
+<tr>
+<td class="sym">TATACONSUM</td>
+<td class="num">25</td>
+<td class="num d down">-0.05%</td>
+<td class="num d down">-0.13%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:2.0%"></i></div></td>
+<td class="num">52%</td>
+<td class="num">60%</td>
+<td class="num d down">-8.28%</td>
+</tr>
+<tr>
+<td class="sym">GRASIM</td>
+<td class="num">32</td>
+<td class="num d down">-0.38%</td>
+<td class="num d down">-0.04%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:0.6%"></i></div></td>
+<td class="num">38%</td>
+<td class="num">47%</td>
+<td class="num d down">-5.42%</td>
+</tr>
+<tr>
+<td class="sym">APOLLOHOSP</td>
+<td class="num">55</td>
+<td class="num d down">-0.01%</td>
+<td class="num d down">-0.01%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:0.2%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">51%</td>
+<td class="num d down">-5.74%</td>
+</tr></table></div>
+</div>
+</div>
+</section>
+<section id="50dma">
+<div class="sec-head">
+  <div>
+    <h2>Touch of the 50 DMA</h2>
+    <p class="def">Previous close above the 50-day average; today's low touches it from above.</p>
+  </div>
+  <div class="sec-stats">
+    <div class="chip"><span class="k">4,497</span> events</div>
+    <div class="chip up-chip"><span class="k">35</span> rose</div>
+    <div class="chip down-chip"><span class="k">15</span> fell</div>
+    <div class="chip"><span class="k d up">+0.13%</span> pooled avg +2d</div>
+  </div>
+</div>
+<div class="panels">
+<div class="panel rose">
+<div class="panel-h">Rose over the next 2 days · 35 stocks</div>
+<div class="scroll"><table><tr><th>Stock</th><th class="num">Events</th><th class="num">Avg +1d</th>
+<th class="num">Avg +2d</th><th class="bar"></th><th class="num">Up % (1d)</th>
+<th class="num">Up % (2d)</th><th class="num">Worst 2d</th></tr><tr>
+<td class="sym">ADANIENT</td>
+<td class="num">82</td>
+<td class="num d up">+0.34%</td>
+<td class="num d up">+0.76%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:11.7%"></i></div></td>
+<td class="num">56%</td>
+<td class="num">54%</td>
+<td class="num d down">-9.26%</td>
+</tr>
+<tr>
+<td class="sym">GRASIM</td>
+<td class="num">116</td>
+<td class="num d up">+0.39%</td>
+<td class="num d up">+0.62%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:9.6%"></i></div></td>
+<td class="num">59%</td>
+<td class="num">59%</td>
+<td class="num d down">-5.09%</td>
+</tr>
+<tr>
+<td class="sym">BHARTIARTL</td>
+<td class="num">92</td>
+<td class="num d up">+0.40%</td>
+<td class="num d up">+0.41%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:6.3%"></i></div></td>
+<td class="num">57%</td>
+<td class="num">52%</td>
+<td class="num d down">-6.31%</td>
+</tr>
+<tr>
+<td class="sym">ONGC</td>
+<td class="num">85</td>
+<td class="num d up">+0.24%</td>
+<td class="num d up">+0.40%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:6.2%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">56%</td>
+<td class="num d down">-13.11%</td>
+</tr>
+<tr>
+<td class="sym">ICICIBANK</td>
+<td class="num">108</td>
+<td class="num d up">+0.11%</td>
+<td class="num d up">+0.39%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:6.0%"></i></div></td>
+<td class="num">46%</td>
+<td class="num">55%</td>
+<td class="num d down">-5.82%</td>
+</tr>
+<tr>
+<td class="sym">CIPLA</td>
+<td class="num">106</td>
+<td class="num d up">+0.20%</td>
+<td class="num d up">+0.37%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:5.7%"></i></div></td>
+<td class="num">57%</td>
+<td class="num">53%</td>
+<td class="num d down">-4.00%</td>
+</tr>
+<tr>
+<td class="sym">KOTAKBANK</td>
+<td class="num">109</td>
+<td class="num d up">+0.12%</td>
+<td class="num d up">+0.37%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:5.7%"></i></div></td>
+<td class="num">59%</td>
+<td class="num">55%</td>
+<td class="num d down">-7.15%</td>
+</tr>
+<tr>
+<td class="sym">HINDALCO</td>
+<td class="num">88</td>
+<td class="num d up">+0.29%</td>
+<td class="num d up">+0.32%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.9%"></i></div></td>
+<td class="num">51%</td>
+<td class="num">55%</td>
+<td class="num d down">-6.62%</td>
+</tr>
+<tr>
+<td class="sym">M&amp;M</td>
+<td class="num">97</td>
+<td class="num d up">+0.32%</td>
+<td class="num d up">+0.29%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.5%"></i></div></td>
+<td class="num">53%</td>
+<td class="num">58%</td>
+<td class="num d down">-6.97%</td>
+</tr>
+<tr>
+<td class="sym">TRENT</td>
+<td class="num">84</td>
+<td class="num d up">+0.36%</td>
+<td class="num d up">+0.28%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.3%"></i></div></td>
+<td class="num">52%</td>
+<td class="num">55%</td>
+<td class="num d down">-9.57%</td>
+</tr>
+<tr>
+<td class="sym">BAJFINANCE</td>
+<td class="num">73</td>
+<td class="num d up">+0.33%</td>
+<td class="num d up">+0.27%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.2%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">51%</td>
+<td class="num d down">-6.38%</td>
+</tr>
+<tr>
+<td class="sym">HDFCLIFE</td>
+<td class="num">89</td>
+<td class="num d up">+0.08%</td>
+<td class="num d up">+0.27%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.2%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">46%</td>
+<td class="num d down">-4.38%</td>
+</tr>
+<tr>
+<td class="sym">AXISBANK</td>
+<td class="num">101</td>
+<td class="num d up">+0.12%</td>
+<td class="num d up">+0.26%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.0%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">50%</td>
+<td class="num d down">-6.48%</td>
+</tr>
+<tr>
+<td class="sym">WIPRO</td>
+<td class="num">89</td>
+<td class="num d up">+0.07%</td>
+<td class="num d up">+0.26%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:4.0%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">54%</td>
+<td class="num d down">-8.42%</td>
+</tr>
+<tr>
+<td class="sym">HCLTECH</td>
+<td class="num">95</td>
+<td class="num d up">+0.07%</td>
+<td class="num d up">+0.25%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.9%"></i></div></td>
+<td class="num">54%</td>
+<td class="num">57%</td>
+<td class="num d down">-10.01%</td>
+</tr>
+<tr>
+<td class="sym">BAJAJ-AUTO</td>
+<td class="num">93</td>
+<td class="num d down">-0.09%</td>
+<td class="num d up">+0.24%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.7%"></i></div></td>
+<td class="num">53%</td>
+<td class="num">54%</td>
+<td class="num d down">-6.72%</td>
+</tr>
+<tr>
+<td class="sym">COALINDIA</td>
+<td class="num">101</td>
+<td class="num d up">+0.38%</td>
+<td class="num d up">+0.23%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.5%"></i></div></td>
+<td class="num">55%</td>
+<td class="num">50%</td>
+<td class="num d down">-7.21%</td>
+</tr>
+<tr>
+<td class="sym">MARUTI</td>
+<td class="num">99</td>
+<td class="num d down">-0.03%</td>
+<td class="num d up">+0.21%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:3.2%"></i></div></td>
+<td class="num">53%</td>
+<td class="num">54%</td>
+<td class="num d down">-8.64%</td>
+</tr>
+<tr>
+<td class="sym">BAJAJFINSV</td>
+<td class="num">89</td>
+<td class="num d up">+0.16%</td>
+<td class="num d up">+0.18%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.8%"></i></div></td>
+<td class="num">49%</td>
+<td class="num">57%</td>
+<td class="num d down">-8.99%</td>
+</tr>
+<tr>
+<td class="sym">EICHERMOT</td>
+<td class="num">97</td>
+<td class="num d up">+0.04%</td>
+<td class="num d up">+0.18%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.8%"></i></div></td>
+<td class="num">52%</td>
+<td class="num">55%</td>
+<td class="num d down">-8.38%</td>
+</tr>
+<tr>
+<td class="sym">NTPC</td>
+<td class="num">107</td>
+<td class="num d up">+0.09%</td>
+<td class="num d up">+0.17%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.6%"></i></div></td>
+<td class="num">52%</td>
+<td class="num">49%</td>
+<td class="num d down">-5.83%</td>
+</tr>
+<tr>
+<td class="sym">NESTLEIND</td>
+<td class="num">104</td>
+<td class="num d up">+0.03%</td>
+<td class="num d up">+0.16%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.5%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">54%</td>
+<td class="num d down">-6.24%</td>
+</tr>
+<tr>
+<td class="sym">INDUSINDBK</td>
+<td class="num">92</td>
+<td class="num d down">-0.22%</td>
+<td class="num d up">+0.16%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.5%"></i></div></td>
+<td class="num">47%</td>
+<td class="num">52%</td>
+<td class="num d down">-9.88%</td>
+</tr>
+<tr>
+<td class="sym">LT</td>
+<td class="num">85</td>
+<td class="num d up">+0.10%</td>
+<td class="num d up">+0.16%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.5%"></i></div></td>
+<td class="num">56%</td>
+<td class="num">55%</td>
+<td class="num d down">-4.37%</td>
+</tr>
+<tr>
+<td class="sym">SBILIFE</td>
+<td class="num">96</td>
+<td class="num d up">+0.04%</td>
+<td class="num d up">+0.14%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.2%"></i></div></td>
+<td class="num">49%</td>
+<td class="num">56%</td>
+<td class="num d down">-7.02%</td>
+</tr>
+<tr>
+<td class="sym">SBIN</td>
+<td class="num">86</td>
+<td class="num d down">-0.11%</td>
+<td class="num d up">+0.14%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.2%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">55%</td>
+<td class="num d down">-10.84%</td>
+</tr>
+<tr>
+<td class="sym">ITC</td>
+<td class="num">93</td>
+<td class="num d up">+0.20%</td>
+<td class="num d up">+0.14%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.2%"></i></div></td>
+<td class="num">51%</td>
+<td class="num">51%</td>
+<td class="num d down">-5.83%</td>
+</tr>
+<tr>
+<td class="sym">BEL</td>
+<td class="num">88</td>
+<td class="num d up">+0.16%</td>
+<td class="num d up">+0.13%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:2.0%"></i></div></td>
+<td class="num">60%</td>
+<td class="num">57%</td>
+<td class="num d down">-16.40%</td>
+</tr>
+<tr>
+<td class="sym">TATACONSUM</td>
+<td class="num">72</td>
+<td class="num d down">-0.15%</td>
+<td class="num d up">+0.12%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.9%"></i></div></td>
+<td class="num">43%</td>
+<td class="num">51%</td>
+<td class="num d down">-8.28%</td>
+</tr>
+<tr>
+<td class="sym">INFY</td>
+<td class="num">83</td>
+<td class="num d up">+0.01%</td>
+<td class="num d up">+0.10%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.5%"></i></div></td>
+<td class="num">46%</td>
+<td class="num">49%</td>
+<td class="num d down">-6.67%</td>
+</tr>
+<tr>
+<td class="sym">ADANIPORTS</td>
+<td class="num">92</td>
+<td class="num d up">+0.16%</td>
+<td class="num d up">+0.09%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.4%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">52%</td>
+<td class="num d down">-8.04%</td>
+</tr>
+<tr>
+<td class="sym">TECHM</td>
+<td class="num">89</td>
+<td class="num d down">-0.11%</td>
+<td class="num d up">+0.07%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:1.1%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">57%</td>
+<td class="num d down">-7.12%</td>
+</tr>
+<tr>
+<td class="sym">DRREDDY</td>
+<td class="num">104</td>
+<td class="num d up">+0.07%</td>
+<td class="num d up">+0.05%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:0.8%"></i></div></td>
+<td class="num">52%</td>
+<td class="num">50%</td>
+<td class="num d down">-9.05%</td>
+</tr>
+<tr>
+<td class="sym">SUNPHARMA</td>
+<td class="num">91</td>
+<td class="num d up">+0.04%</td>
+<td class="num d up">+0.04%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:0.6%"></i></div></td>
+<td class="num">49%</td>
+<td class="num">52%</td>
+<td class="num d down">-6.35%</td>
+</tr>
+<tr>
+<td class="sym">HEROMOTOCO</td>
+<td class="num">85</td>
+<td class="num d down">-0.12%</td>
+<td class="num d up">+0.03%</td>
+<td class="bar"><div class="track"><i class="pos" style="width:0.5%"></i></div></td>
+<td class="num">49%</td>
+<td class="num">41%</td>
+<td class="num d down">-6.62%</td>
+</tr></table></div>
+</div>
+<div class="panel fell">
+<div class="panel-h">Fell over the next 2 days · 15 stocks</div>
+<div class="scroll"><table><tr><th>Stock</th><th class="num">Events</th><th class="num">Avg +1d</th>
+<th class="num">Avg +2d</th><th class="bar"></th><th class="num">Up % (1d)</th>
+<th class="num">Up % (2d)</th><th class="num">Worst 2d</th></tr><tr>
+<td class="sym">JIOFIN</td>
+<td class="num">20</td>
+<td class="num d down">-1.03%</td>
+<td class="num d down">-0.67%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:10.3%"></i></div></td>
+<td class="num">30%</td>
+<td class="num">40%</td>
+<td class="num d down">-6.25%</td>
+</tr>
+<tr>
+<td class="sym">TATAMOTORS</td>
+<td class="num">74</td>
+<td class="num d down">-0.09%</td>
+<td class="num d down">-0.48%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:7.4%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">47%</td>
+<td class="num d down">-15.57%</td>
+</tr>
+<tr>
+<td class="sym">RELIANCE</td>
+<td class="num">84</td>
+<td class="num d down">-0.27%</td>
+<td class="num d down">-0.47%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:7.3%"></i></div></td>
+<td class="num">39%</td>
+<td class="num">36%</td>
+<td class="num d down">-8.89%</td>
+</tr>
+<tr>
+<td class="sym">ASIANPAINT</td>
+<td class="num">88</td>
+<td class="num d down">-0.05%</td>
+<td class="num d down">-0.31%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:4.8%"></i></div></td>
+<td class="num">56%</td>
+<td class="num">48%</td>
+<td class="num d down">-8.68%</td>
+</tr>
+<tr>
+<td class="sym">TATASTEEL</td>
+<td class="num">71</td>
+<td class="num d down">-0.36%</td>
+<td class="num d down">-0.29%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:4.5%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">48%</td>
+<td class="num d down">-7.20%</td>
+</tr>
+<tr>
+<td class="sym">HDFCBANK</td>
+<td class="num">87</td>
+<td class="num d down">-0.21%</td>
+<td class="num d down">-0.15%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:2.3%"></i></div></td>
+<td class="num">43%</td>
+<td class="num">48%</td>
+<td class="num d down">-8.38%</td>
+</tr>
+<tr>
+<td class="sym">HINDUNILVR</td>
+<td class="num">87</td>
+<td class="num d down">-0.16%</td>
+<td class="num d down">-0.14%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:2.2%"></i></div></td>
+<td class="num">43%</td>
+<td class="num">45%</td>
+<td class="num d down">-6.99%</td>
+</tr>
+<tr>
+<td class="sym">TCS</td>
+<td class="num">94</td>
+<td class="num d down">-0.11%</td>
+<td class="num d down">-0.14%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:2.2%"></i></div></td>
+<td class="num">45%</td>
+<td class="num">47%</td>
+<td class="num d down">-5.58%</td>
+</tr>
+<tr>
+<td class="sym">TITAN</td>
+<td class="num">74</td>
+<td class="num d up">+0.05%</td>
+<td class="num d down">-0.12%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:1.9%"></i></div></td>
+<td class="num">50%</td>
+<td class="num">45%</td>
+<td class="num d down">-5.95%</td>
+</tr>
+<tr>
+<td class="sym">APOLLOHOSP</td>
+<td class="num">104</td>
+<td class="num d down">-0.20%</td>
+<td class="num d down">-0.10%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:1.5%"></i></div></td>
+<td class="num">47%</td>
+<td class="num">47%</td>
+<td class="num d down">-9.98%</td>
+</tr>
+<tr>
+<td class="sym">POWERGRID</td>
+<td class="num">113</td>
+<td class="num d up">+0.05%</td>
+<td class="num d down">-0.09%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:1.4%"></i></div></td>
+<td class="num">56%</td>
+<td class="num">48%</td>
+<td class="num d down">-8.75%</td>
+</tr>
+<tr>
+<td class="sym">ETERNAL</td>
+<td class="num">48</td>
+<td class="num d up">+0.09%</td>
+<td class="num d down">-0.03%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:0.5%"></i></div></td>
+<td class="num">46%</td>
+<td class="num">54%</td>
+<td class="num d down">-12.98%</td>
+</tr>
+<tr>
+<td class="sym">JSWSTEEL</td>
+<td class="num">97</td>
+<td class="num d up">+0.13%</td>
+<td class="num d down">-0.03%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:0.5%"></i></div></td>
+<td class="num">48%</td>
+<td class="num">45%</td>
+<td class="num d down">-7.99%</td>
+</tr>
+<tr>
+<td class="sym">SHRIRAMFIN</td>
+<td class="num">98</td>
+<td class="num d down">-0.13%</td>
+<td class="num d down">-0.03%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:0.5%"></i></div></td>
+<td class="num">42%</td>
+<td class="num">48%</td>
+<td class="num d down">-7.98%</td>
+</tr>
+<tr>
+<td class="sym">ULTRACEMCO</td>
+<td class="num">98</td>
+<td class="num d up">+0.06%</td>
+<td class="num d down">-0.01%</td>
+<td class="bar"><div class="track"><i class="neg" style="width:0.2%"></i></div></td>
+<td class="num">56%</td>
+<td class="num">53%</td>
+<td class="num d down">-8.36%</td>
+</tr></table></div>
+</div>
+</div>
+</section>
+
+<div class="notes">
+<h2>Method &amp; honest caveats</h2>
+<ul>
+<li><strong>Event definitions.</strong> DMA touch = previous close above the average and today's low at/below it. 52-week low = today's low under the prior 252-session minimum. One event per 5 sessions per stock, so a long slide isn't recounted daily.</li>
+<li><strong>Returns are close-to-close</strong> from the event day's close — what you'd get buying the close after the signal printed.</li>
+<li><strong>Small samples in the 52-week-low table.</strong> Several stocks have under 10 events (ETERNAL has one) — treat single-digit event counts as anecdotes, not edges.</li>
+<li><strong>Survivorship bias.</strong> Today's constituents applied to 10 years of history; stocks that fell out of the index (and kept falling) aren't here, which flatters the bounce numbers.</li>
+<li><strong>Tata Motors</strong> uses its post-demerger ticker (TMPV); history spans the full decade.</li>
+</ul>
+</div>
+<footer>Generated 18 Aug 2026 · analysis/nifty50_events.py · Not investment advice.</footer>
+</div>
+
+</body>
+</html>
